@@ -1,8 +1,18 @@
+# Solidity Version Change Notes
+
+The change notes from major solidity revisions `v0.6.0`, `v0.7.0`, and `v0.8.0` are included here.
+
+There are distinctions between several types of changes:
+- *Breaking semantic changes* are those where existing code will still compile, but its behavior may change, and the compiler will not notify the user about it.
+- *Explicitness requirements* ...
+- *Syntactic changes* will cause existing code not to compile anymore.
+- *New features* include new keywords and properties
+- *Removal* of unused or unsafe features
+- *New restrictions* might cause existing code not to compile anymore.
+
 ## Solidity v0.6.0 Changes
 
 ### 135. Solidity v0.6.0 Breaking Semantic Changes
-
-*Semantic changes* are those where existing code changes its behavior and the compiler will not notify the user about it.
 
 - The resulting type of an *exponentiation* is the now *type of the base*. It used to be the smallest type that could hold both the type of the base and the type of the exponent, as with symmetric operations.
 - The exponentiation *base* now allows *signed types*
@@ -37,13 +47,9 @@
 
 ### 139. Solidity v0.7.0 Breaking Semantic Changes
 
-*Semantic changes* are those where existing code changes its behavior and the compiler will not notify the user about it.
-
 - *Exponentiation* and *shifts of literals* by non-literals (`1 << x` or `2**x`) will always use either the type `uint256` (for non-negative literals) or `int256` (for negative literals) to perform the operations. Previously, the operation was performed in the type of the shift amount / the exponent which can be misleading.
 
 ### 140. Solidity v0.7.0 Syntactic Changes
-
-*Syntactic changes* will cause existing contracts not to compile anymore.
 
 - In external functions and contract creation calls, Ether and gas is now specified using a new syntax: `x.f{gas: 10000, value: 2 ether}(art1, arg2)`. The old syntax `x.f.gas(10000).value(2ether)(arg1, arg2)` will throw an `Error`
 - The global variable `now` is deprecated, `block.timestamp` should be used instead. The single identifier `now` is too generic for a global variable and could give the impression that it changes during the transaction processing, whereas `block.timestamp` correctly reflects the fact that it is just a property of the block
@@ -82,8 +88,6 @@
 - The type `byte` has been removed. It was an alias of `bytes1`.
 
 ### 143. Solidity v0.8.0 New Restrictions
-
-Changes that might cause existing contracts to not compile anymore
 
 - Explicit conversions from negative literals and literals larger than `type(uint160).max` to `address` are disallowed.
 - Explicit conversions between literals and an integer type `T` are only allowed if the literal lies between `type(T).min` and `type(T).max`. In particular, replace usages of `uint(-1)` with `type(uint).max`.
