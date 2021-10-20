@@ -100,8 +100,36 @@ Changes that might cause existing contracts to not compile anymore
 - Explict conversion into `address` type always returns a non-payable `address` type.
 - The `chainid` builtin in inline assembly is now considered `view` instead of `pure`
 
+## Various Checks
+
 ### 144. Zero Address Check
+
+The zero-address `address(0)` is 20-bytes of `0`s: `0x00000000000000000000`
+
+ `address(0)` treated specially in Solidity contracts because the private key corresponding to this address is unknown.
+
+Ether and tokens sent to `address(0)` cannot be retrieved and setting access control roles to this address also will not work (no private key to sign tx).
+
+Therefore, `address(0)` should be used with care, and checks should be implemented for user supplied address parameters.
+
+```solidity
+require( destination != address(0), "Error: this will burn tokens");
+```
 
 ### 145. Tx origin Check
 
+Ethereum has two types of accounts: Externally Owned Accounts (EOA) and Contract Accounts.
+
+Transactions can originate only from EOAs. Messages may originate from either.
+
+In situations where contracts would like to determine if the `msg.sender` was a contract or not, checking if `msg.sender` is `tx.origin` is an effective check.
+
+```solidity
+require( msg.sender == tx.origin, "Error: msg from contract account");
+```
+
 ### 146. Overflow/Underflow Check
+
+Until Solidity `v0.8.0` introduced checked arithmetic by default, arithmetic was unchecked and susceptible to overflows and underflows, leading to critical vulnerabilities.
+
+The recommended best practice for contracts before `v0.8.0` is to use OZ's SafeMath library for arithmetic.
