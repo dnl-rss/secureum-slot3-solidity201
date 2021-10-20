@@ -1,3 +1,5 @@
+## Solidity v0.6.0 Changes
+
 ### 135. Solidity v0.6.0 Breaking Semantic Changes
 
 *Semantic changes* are those where existing code changes its behavior and the compiler will not notify the user about it.
@@ -31,6 +33,8 @@
 - Yul and Inline assembly have a new statement called `leave` that exits the current function
 - Conversion from `address` to `address payabe` are now possible via `payable(x)` where `x` must be of type `address`.
 
+## Solidity v0.7.0 Changes
+
 ### 139. Solidity v0.7.0 Breaking Semantic Changes
 
 *Semantic changes* are those where existing code changes its behavior and the compiler will not notify the user about it.
@@ -63,9 +67,38 @@
 - The `finney` and `szabo` denominations are removed. They are rarely used and do not make the actual amount readily visible. Instead, explicit values like `1e20` or the very common `qwei` can be used.
 - The keyword `var` cannot be used anymore. Previously, this keyword would parse but result in a type error and a suggestion about which type to use. Now, it results in a parser error.
 
+## Solidity v0.8.0 Changes
+
 ### 142. Solidity v0.8.0 Breaking Semantic Changes
 
+*Semantic changes* are those where existing code changes its behavior and the compiler will not notify the user about it.
+
+- Arithmetic operations revert on underflow and overflow. You can use `unchecked {...}` to use the previous wrapping behavior. Checks for overflow are very common, so they are the default to increase readability of code, even if it comes at a slight increase of gas costs.
+- `abicoder v2` is activated by default. You can choose the old behavior using `pragma abicoder v1`; the syntax `pragma experimental ABIEncoderV2` is still valid, but it is deprecated and has no effect. If you want to be explicity, please use `pragma abicoder v2` instead.
+- Exponentiation is right associated, i.e. the expression `a**b**c` is parsed as `a**(b**c)`. Before `v0.8.0` is as parsed as `(a**b)**c`. This is the common way to parse the exponentiation operator.
+- Failing assertions and other internal checks like division by zero or arithmetic overflow do not use the `INVALID` opcode but instead the `REVERT` opcode. Specifically, they use error data equal to a function call to `Panic(uint256)` with an error code specific to the circumstances. This will save gas on errors while still allowing static analysis tools to distinguish these situations from a revert on invalid input, like a failing `require()`.
+- If a byte array in `storage` is accessed whose length is encoded incorrectly, a `Panic()` is caused. A contract cannot get into this situation unless inline assemby is used to modify the raw representation of storage byte arrays.
+- If constants are used in array length expressions, previous versions of Solidity would use arbitrary precision in all branches of the evaluation tree. Now, if constant variables are used as intermediate expressions, their values will be properly rounded in the same way as when they are used in run-time expressions.
+- The type `byte` has been removed. It was an alias of `bytes1`.
+
 ### 143. Solidity v0.8.0 New Restrictions
+
+Changes that might cause existing contracts to not compile anymore
+
+- Explicit conversions from negative literals and literals larger than `type(uint160).max` to `address` are disallowed.
+- Explicit conversions between literals and an integer type `T` are only allowed if the literal lies between `type(T).min` and `type(T).max`. In particular, replace usages of `uint(-1)` with `type(uint).max`.
+- Explicit conversions between liberals and enums are only allowed if the literal can represent a value in the enum
+- Explicit conversions between literals and `address` type (`address(literal)`) have the type `address` instead of `address payable`. One can get a `payable address` type using an explicit conversion (`payable(literal)`)
+- Address literals have the type `address` instead of `address payable`. They can be converted to `address payable` by using an explicit conversion
+- Function call options can be given only once:
+    - `f{gas: 10000}{value: 1}()` is **invalid**
+    - `f{gas: 10000, value: 1}()` is **valid**
+- Global functions `log0`, `log1`, `log2`, `log3`, and `log4` have been removed. These are low-level functions that were largely unused. Their behavior can be accessed from inline assembly.
+- `enum` definitions cannot contain more than 256 members. This will make it safe to assume that the underlying type in the ABI is always `uint8`
+- Declarations with the name `this`, `super`, and `_` are disallowed, with the exception of `public` functions and events
+- The global variables `tx.origin` and `msg.sender` have the type `address` instead of `address payable`. One can convert tham into `address payable` by using an explicit conversion.
+- Explict conversion into `address` type always returns a non-payable `address` type.
+- The `chainid` builtin in inline assembly is now considered `view` instead of `pure`
 
 ### 144. Zero Address Check
 
