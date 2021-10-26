@@ -1,64 +1,166 @@
 ### 102. Inheritance
 
-Solidity supports *multiple inheritance*, including *polymorphism*.
+Solidity supports **multiple inheritance**, including **polymorphism**.
 
-1. *Polymorphism* means that a function call (internal and external) always executes the function of the specified name and parameter types in the *most derived contract* in the inheritance hierarchy.
-2. When a contract inherits from other contracts, only a *single contract is created* on the blockchain, and the code from all the base contracts is compiled into the created contract.
-3. Base functions can be *overriddedn* by inheriting contracts to changed their behavior if they are marked `virtual`. The overriding function must use the `override` keyword in the function header.
-4. Languages that allow multiple inheritance must deal with several problems:
-    - The *diamond problem*: solidity uses *C3 linearization* to force a specific order in the directed acyclic graph (DAG) of base classes. When a function that is defined multiples times is called, the given bases are searched from right to left (depth-first) to stop at the first match. Python goes left to right.
+1. **Polymorphism** means that a function call (internal and external) **always executes the function** in the **most derived contract** of the inheritance hierarchy, which matches the specified name and parameter types
+2. When a contract **inherits from multiple contracts**, only a **single contract is instantiated**
+    - the code from all the base contracts is compiled into the created contract
+3. Solidity supports function **overriding**
+    - **base functions** can be **overridden** by **inheriting contracts**, changing their behavior
+    - **base functions** must be marked `virtual`
+    - **overriding function** must be marked `override`
+4. There are several **problems with multiple inheritance** that languages must address:
+    - **Diamond Problem**:
+        - *C3 linearization* forces a specific order in the directed acyclic graph (DAG) of base classes
+        - when a **function that is defined multiples times is called**, the given bases are searched from **right to left** (depth-first) to stop at the first match (python goes left to right).
 
 ### 103. Contract Types
 
 In addition to the regular `contract` type, contracts may be marked `abstract contract`, `interface`, or `library`
 
-1. `abstract contract`: at least one function is not implemented
-2. `interface`: no functions are implemented. There are further restrictions:
-    - cannot inherit from `contract` types, but can from `interface`
-    - all declared functions must be `external`
-    - cannot declare a `constructor()`
-    - cannot declare state variables
-3. `library`: deployed once to specific address and code is reused via `DELEGATECALL`
-    - when library functions are called, their code is executed in the context of the calling contract
+1. `abstract contract`
+    - **at least one function is not implemented**
+2. `interface`:
+    - **no functions are implemented**
+    - further restrictions:
+        - cannot inherit from `contract` types, but can from `interface`
+        - declared functions must be `external`
+        - cannot declare a `constructor()`
+        - cannot declare state variables
+3. `library`:
+    - **deployed once to specific address** and **code is reused** via `DELEGATECALL`
+    - library functions are **executed in the context of the calling contract**
 
 ### 104. Using For
 
-The directive `using A for B` can be used to attach functions from the `library A` to any `type(B)` in the context of a `contract`
+The directive `using A for B` is used to **attach library functions** from `library A` to any `type(B)`,
+- the directive **is only active** within the context of the current `contract` and its functions (it has no effect outside that contract)
+- the directive **may only be declared inside a contract, outside of its functions**
 
-These functions receive the object (`type(B)`) that they are called on as their first parameter
+The attached library functions receive the object `type(B)` that they are called on as their first parameter
 
-1. directive is only active within the current contract (including within its functions) and has no effect outside of that contract
-2. directive may only be used inside a contract, not inside any of its functions.
-
-> Variables of type uint256 have functions from SafeMath library attached
+> This contract attaches the functions from `SafeMath` library to `uint256` variables:
 
 ```solidity
-using SafeMath for uint256;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.0.0/contracts/math/SafeMath.sol";
+
+contract LibraryDemo {
+
+    // attach "SafeMath" library functions to uint256 type variables
+    using SafeMath for uint256;
+
+    // declare a uint256 state variable, which has SafeMath functions attached
+    uint256 public counter;
+
+    function increment() public {
+
+        // calls SafeMath function add(uint256 a, uint256 b)
+        // where the first parameter "a" is "counter"
+        // reverts if counter exceeds 2**256
+        counter = counter.add(1);
+    }
+
+    function decrement() public {
+
+        // reverts if counter falls below 0
+        counter = counter.sub(1);
+    }
+}
+```
+
+> Note that the SafeMath function `add(uint256 a, uint256 b)` receives the first parameter `a` as the variable `counter` when it is called in the contract above
+
+```solidity
+function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    require(c >= a, "SafeMath: addition overflow");
+
+    return c;
+}
 ```
 
 ### 105. Base Class Functions
 
-It is possible to call functions further up the *inheritance hierarchy*:
-- `ContractName.functionName()` explicitly calls the function in another contract (may be a parent, grandparent, etc)
-- `super.functionName()` calls the function in the contract one level up
+It is possible to **call functions from base classes**, further up the **inheritance hierarchy**:
+- `ContractName.functionName()`
+    - **explicitly calls** the function in another contract
+    - may be a parent, grandparent, etc
+- `super.functionName()`
+    - calls the function in the contract **one level up**
+
+```solidity
+// TODO: needs code example with more explanation
+```
 
 ### 106. State Variable Shadowing
 
+A derived contract may only declare a state variable `x` if there is **no visible state variable** `x` in any of its bases.
+
 This throws an `Error` after `v0.6.0` due to confusion and security concerns with derived variables.
 
-A derived contract may only declare a state variable `x` if there is *no visible state variable* `x` in any of its bases.
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.6.0;
+
+contract Base {
+    uint public myNum;
+}
+
+contract OnceDerived is Base {
+    // this fails due to shadowing
+    // uint public myNum;
+    // DeclarationError Identifier already declared
+}
+```
 
 ### 107. Function Overriding Changes
 
-A function marked `override` in a derived class may:
-- redefine the logic of a function in the base class
-- alter the *visibility* of a `virtual` function in the base class from `external` to `public`
-- change the *mutability* to a more strict one following this order:
-    - non-`payable` can be overridden by `view` and `pure`
-    - `pure` can be overridden by `pure`
-    - `view` can be overridden by `pure`
+
+A function marked `override` in a derived class may change the behavior of a function marked `virtual` in a base class:
+- redefine the **logic**
+- alter the **visibility**:
+    - `external` to `public`
+- change the **mutability**:
+    - non-payable to `view` or `pure`
+    - `view` to `pure`
     - `payable` cannot be overridden
 
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
+
+contract Base {
+
+    function myFunction() virtual external {}
+
+    function otherFunction() public {
+        // this fails. myFunction() is external and cannot be called within this contract
+        // myFunction();
+        // DeclarationError: Undeclared identifier. "myFunction" is not (or not yet) visible at this point    
+    }
+}
+
+contract OnceDerived is Base {
+
+    function myFunction() override public {
+        // changes the visibility of myFunction, inherited from Base, from external to public
+    }
+    /*
+    function otherFunction() override public {
+        // this fails. otherFunction, inheritied from Base, is not virtual and cannot be ovverriden
+        // TypeError: trying to override a non-virtual function
+    }
+    */
+    function anotherFunction() public {
+        // this succeeds. myFunction is now public and may be called within OnceDerived contract
+        myFunction();
+    }
+}
+
+```
 ### 108. Virtual Functions
 
 Functions marked `virtual` may **not** define an implementation in the `contract`.
