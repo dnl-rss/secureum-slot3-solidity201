@@ -89,15 +89,27 @@ There are distinctions between several types of changes:
 
 ### 141. Solidity v0.7.0 Removal of Unused or Unsafe Features
 
-- If a struct or array contains a mapping, it can only be used in storage. Previously, mapping members were silently skipped in memory, which is confusing and error-prone.
-- Assignments to structs or arrays in storage do not work if they contain mappings. Previously, mappings were silently skipped during the copy operation, which is misleading and error-prone.
-- Visibility (public/ external) is not needed for constructors anymore: to prevent a contract from being created, it can be marked `abstract`. This makes the visibility concept for `constructor()` obsolete
-- Disallow `virtual` for `library` functions. Since libraries cannot be inherited from, library functions should not be virtual.
-- Multiple events with the same name and parameter types in the same inheritance hierarchy are disallowed.
-- `using A for B` only affects the contract it is mentioned in. Previously, the effect was inherited. Now, you have to repeat the using statement in all derived contracts that make use of the feature.
-- Shifts by signed types are disallowed. Previously, shifts by negative amounts where allowed, but reverted at runtime.
-- The `finney` and `szabo` denominations are removed. They are rarely used and do not make the actual amount readily visible. Instead, explicit values like `1e20` or the very common `qwei` can be used.
-- The keyword `var` cannot be used anymore. Previously, this keyword would parse but result in a type error and a suggestion about which type to use. Now, it results in a parser error.
+- **Structs or arrays containing a `mapping` can only be used in `storage`**
+    - previously, `mapping` members were silently skipped in `memory`, which is confusing and error-prone.
+- **Structs or arrays containing a `mapping` in `storage` cannot be assigned to**
+    - previously, mappings were silently skipped during the copy operation, which is misleading and error-prone.
+- **Visibility (`public`/`external`) is not needed for `constructor()` anymore**
+    - to prevent a contract from being created, it can be marked `abstract`
+    - this makes the visibility concept for `constructor()` obsolete
+- **Disallow `virtual` for `library` functions**
+    - since libraries cannot be inherited from, library functions should not be `virtual`
+- **Multiple events with the same name and parameter types in the same inheritance hierarchy are disallowed**
+- **`using A for B` only affects the contract it is stated in**
+    - previously, the effect was inherited
+    - now, the using statement must be repeated in all derived contracts that make use of the feature
+- **Shifts by signed types are disallowed**
+    - previously, shifts by negative amounts where allowed, but reverted at runtime.
+- **`finney` and `szabo` denominations are removed**
+    - they are rarely used and do not make the actual amount readily visible
+    - instead, explicit values like `1e20` or the very common `qwei` can be used.
+- **Keyword `var` cannot be used anymore**
+    - previously, this keyword would parse but result in a `TypeError` and a suggestion about which type to use
+    - now, it results in a `ParserError`
 
 ## Solidity v0.8.0 Changes
 
@@ -105,42 +117,60 @@ There are distinctions between several types of changes:
 
 *Semantic changes* are those where existing code changes its behavior and the compiler will not notify the user about it.
 
-- Arithmetic operations revert on underflow and overflow. You can use `unchecked {...}` to use the previous wrapping behavior. Checks for overflow are very common, so they are the default to increase readability of code, even if it comes at a slight increase of gas costs.
-- `abicoder v2` is activated by default. You can choose the old behavior using `pragma abicoder v1`; the syntax `pragma experimental ABIEncoderV2` is still valid, but it is deprecated and has no effect. If you want to be explicity, please use `pragma abicoder v2` instead.
-- Exponentiation is right associated, i.e. the expression `a**b**c` is parsed as `a**(b**c)`. Before `v0.8.0` is as parsed as `(a**b)**c`. This is the common way to parse the exponentiation operator.
-- Failing assertions and other internal checks like division by zero or arithmetic overflow do not use the `INVALID` opcode but instead the `REVERT` opcode. Specifically, they use error data equal to a function call to `Panic(uint256)` with an error code specific to the circumstances. This will save gas on errors while still allowing static analysis tools to distinguish these situations from a revert on invalid input, like a failing `require()`.
-- If a byte array in `storage` is accessed whose length is encoded incorrectly, a `Panic()` is caused. A contract cannot get into this situation unless inline assemby is used to modify the raw representation of storage byte arrays.
-- If constants are used in array length expressions, previous versions of Solidity would use arbitrary precision in all branches of the evaluation tree. Now, if constant variables are used as intermediate expressions, their values will be properly rounded in the same way as when they are used in run-time expressions.
-- The type `byte` has been removed. It was an alias of `bytes1`.
+- **Arithmetic operations revert on underflow and overflow**
+    - use `unchecked {...}` to use the previous wrapping behavior
+    - checks for overflow are very common, so they are the default to increase readability of code, even if it comes at a slight increase of gas costs
+- **`abicoder v2` is activated by default**
+    - revert to the old behavior using `pragma abicoder v1`
+    - the syntax `pragma experimental ABIEncoderV2` is still valid, but it is deprecated and has no effect
+    - to explicitly declare v2, use `pragma abicoder v2` instead.
+- **Exponentiation is right associated**
+    - the expression `a**b**c` is parsed as `a**(b**c)`, this is the common way to parse the exponentiation operator
+    - before `v0.8.0` it was as parsed as `(a**b)**c`
+- **Failing assertions and other internal checks like division by zero or arithmetic overflow do not use the `INVALID` opcode but instead the `REVERT` opcode**
+    - specifically, they use error data equal to a function call to `Panic(uint256)` with an error code specific to the circumstances.
+    - this will save gas on errors while still allowing static analysis tools to distinguish these situations from a revert on invalid input, like a failing `require()`.
+- **If a byte array in `storage` is accessed whose length is encoded incorrectly, a `Panic()` is caused**
+    - A contract cannot get into this situation unless inline assembly is used to modify the raw representation of storage byte arrays.
+- **Constants used in array length expressions are now rounded in the same way as when they are used in run-time expressions**
+    - previous versions of Solidity would use arbitrary precision in all branches of the evaluation tree
+- **The type `byte` has been removed**
+    - it was an alias of `bytes1`.
 
 ### 143. Solidity v0.8.0 New Restrictions
 
-- Explicit conversions from negative literals and literals larger than `type(uint160).max` to `address` are disallowed.
-- Explicit conversions between literals and an integer type `T` are only allowed if the literal lies between `type(T).min` and `type(T).max`. In particular, replace usages of `uint(-1)` with `type(uint).max`.
-- Explicit conversions between liberals and enums are only allowed if the literal can represent a value in the enum
-- Explicit conversions between literals and `address` type (`address(literal)`) have the type `address` instead of `address payable`. One can get a `payable address` type using an explicit conversion (`payable(literal)`)
-- Address literals have the type `address` instead of `address payable`. They can be converted to `address payable` by using an explicit conversion
-- Function call options can be given only once:
+- **Explicit conversions from negative literals and literals larger than `type(uint160).max` to `address` are disallowed**
+- **Explicit conversions between literals and an integer type `T` are only allowed if the literal lies between `type(T).min` and `type(T).max`**
+    - In particular, replace usages of `uint(-1)` with `type(uint).max`.
+- **Explicit conversions between literals and enums are only allowed if the literal can represent a value in the enum**
+- **Explicit conversions between literals and `address` via `address(literal)` have the type `address` instead of `address payable`**
+    -  use `payable(literal)` to convert to `address payable`
+- **Address literals have the type `address` instead of `address payable`**
+    - They can be converted to `address payable` by using an explicit conversion
+- **Function call options can be given only once**
     - `f{gas: 10000}{value: 1}()` is **invalid**
     - `f{gas: 10000, value: 1}()` is **valid**
-- Global functions `log0`, `log1`, `log2`, `log3`, and `log4` have been removed. These are low-level functions that were largely unused. Their behavior can be accessed from inline assembly.
-- `enum` definitions cannot contain more than 256 members. This will make it safe to assume that the underlying type in the ABI is always `uint8`
-- Declarations with the name `this`, `super`, and `_` are disallowed, with the exception of `public` functions and events
-- The global variables `tx.origin` and `msg.sender` have the type `address` instead of `address payable`. One can convert tham into `address payable` by using an explicit conversion.
-- Explict conversion into `address` type always returns a non-payable `address` type.
-- The `chainid` builtin in inline assembly is now considered `view` instead of `pure`
+- **Global functions `log0`, `log1`, `log2`, `log3`, and `log4` have been removed**
+    - These are low-level functions that were largely unused.
+    - Their behavior can be accessed from inline assembly.
+- **`enum` definitions cannot contain more than 256 members**
+    - this will make it safe to assume that the underlying type in the ABI is always `uint8`
+- **Declarations with the name `this`, `super`, and `_` are disallowed**
+    - exception to this rule in `public` functions and events
+- **The global variables `tx.origin` and `msg.sender` have the type `address` instead of `address payable`**
+    - One can convert tham into `address payable` by using an explicit conversion.
+- **Explicit conversion into `address` type always returns a non-payable `address` type**
+- **The `chainid` builtin in inline assembly is now considered `view` instead of `pure`**
 
 ## Various Checks
 
 ### 144. Zero Address Check
 
 The zero-address `address(0)` is 20-bytes of `0`s: `0x00000000000000000000`
-
- `address(0)` treated specially in Solidity contracts because the private key corresponding to this address is unknown.
-
-Ether and tokens sent to `address(0)` cannot be retrieved and setting access control roles to this address also will not work (no private key to sign tx).
-
-Therefore, `address(0)` should be used with care, and checks should be implemented for user supplied address parameters.
+- `address(0)` treated specially in Solidity contracts because the private key corresponding to this address is unknown.
+- Ether and tokens sent to `address(0)` cannot be retrieved
+- setting access control roles to `address(0)` cannot sign messages
+- `address(0)` should be used with care, and checks should be implemented for user supplied address parameters.
 
 ```solidity
 require( destination != address(0), "Error: this will burn tokens");
@@ -149,8 +179,8 @@ require( destination != address(0), "Error: this will burn tokens");
 ### 145. Tx origin Check
 
 Ethereum has two types of accounts: Externally Owned Accounts (EOA) and Contract Accounts.
-
-Transactions can originate only from EOAs. Messages may originate from either.
+- Transactions can originate only from EOAs.
+- Messages may originate from either.
 
 In situations where contracts would like to determine if the `msg.sender` was a contract or not, checking if `msg.sender` is `tx.origin` is an effective check.
 
