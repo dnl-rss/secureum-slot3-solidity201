@@ -1,9 +1,9 @@
 ### 114. EVM storage
 
-EVM contract `storage` is a **key-value store**:
+EVM contract `storage` is a **key-value** store:
 - **mapping** of **256-bit words** to **256-bit words**
-- accessed with EVM's `SSTORE`/`SLOAD` instructions.
-- all locations in `storage` are initialized as *zero*.
+- accessed with EVM's `SSTORE`/`SLOAD` instructions
+- all locations in `storage` are **zero-initialized**
 
 ### 115. Storage Layout
 
@@ -18,7 +18,7 @@ EVM contract `storage` is a **key-value store**:
 **Contiguous variables** are stored **compactly**, within a single slot, if their **byte size** allows.
 
 The variables must require **less than 32 bytes** in `storage`:
-1. **first item** is stored **lower order aligned**
+1. **first item** is stored **lower order aligned** (right aligned)
 2. **value types** only use the **bytes needed** to represent them
 3. value types that will **not fit**, are stored in the **next slot**
 
@@ -36,7 +36,7 @@ contract StorageLayout {
 **Structs and array data** are stored according to these **rules**:
 1. **always start a new slot**
 2. **following variables also always start a new slot**
-3. **elements** are stored **compactly**, as if they were given as individual values (in same slot as a struct?)
+3. **elements** are stored **compactly**, as if they were given as individual values
 
 ### 118. Storage Layout & Inheritance
 
@@ -58,7 +58,7 @@ contract Derived is Base {
 
 ### 119. Storage Layout & Types
 
-A developer may use **reduced size types** with storage values so that the elements can pack compactly into a single storage slot:
+A developer may use **reduced size types** with storage values so that the elements can **pack compactly** into a **single storage slot**:
 - **pro**: may **combine multiple reads or writes** into a **single operation**
 - **con**: this **increases the gas cost** of reading or writing an **isolated variable** within the slot
 
@@ -78,7 +78,7 @@ Mappings and dynamic arrays are **unpredictable in size**
 - they cannot be stored "in-between" slots of the state variables preceding and following them
 - the variable itself is stored in a **single slot** `p` (32 bytes), according to the rules above [117]
 - the **elements** are stored starting at a **different storage slot**, computed using a `keccak256` hash
-- this provision allows elements to be added to the array while insuring that their slot will not shadow an existing variable
+- this provision allows elements to be added to the array while insuring that their slot will not collide with an existing variable
 
 #### 122. Storage Layout for Dynamic Arrays
 
@@ -91,8 +91,9 @@ For dynamic array stored in slot `p`:
 
 #### 123. Storage Layout for Mappings
 
-For a mapping stored in slot `p`:
-- slot `p` stays **empty** (it is needed to ensure the data of two consecutive mappings is stored in different locations)
+For a `mapping` stored in slot `p`:
+- slot `p` stays **empty**
+    - it is needed to ensure the data of two consecutive mappings is stored in different locations
 - a **value mapped to key** `k` is stored at **slot** `keccack256(h(k).p)`:
     - `.` is concatenation
     - `h(k)` is a function applied to `k` depending on its type:
@@ -103,14 +104,13 @@ For a mapping stored in slot `p`:
 
 ### 124. Storage Layout for Bytes & Strings
 
-Bytes and strings are encoded identically, similar to arrays. With an interesting optimization
+**Bytes and strings** are encoded identically, similar to arrays. With an interesting **optimization**
 
 For **byte arrays** of **32 bytes or longer** at **slot** `p`:
 - **slot** `p` stores `length*2 + 1` in the **lowest order bytes**
 - **elements** are **stored separately** starting in slot `keccack256(p)`
 
 However, for **byte arrays** **shorter than 32 bytes** at slot `p`:
-- **elements are also stored in slot `p`**  
 - **slot** `p` stores `length * 2` in the **lowest order bytes**
 - **slot** `p` also **stores the elements** in the **higher order bytes**
 

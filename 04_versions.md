@@ -22,70 +22,84 @@ There are distinctions between several types of changes:
 
 - Functions (and modifiers) may now be *overriden* only if they are marked `virtual` or defined in an `interface`.
     - the new keyword `override` must be used.
-    - ff the overriding function is defined in multiple bases, they must be listed in parentheses after the keyword `override(Base1, Base1)`
+    - if the overriding function is **defined in multiple bases**, they must be listed in parentheses after the keyword `override(Base1, Base2)`
 - Member **access to array length** is now **always read-only**, even for `storage` arrays.
     - **may no longer resize storage arrays by reassigning the length**
     - use `push()`, `push(value)`, or `pop()` methods instead.
     - otherwise, one may assign a full array and **overwrite** the existing content.
     - reason behind this change is to **prevent storage collisions** of large storage arrays
 - The new keyword `abstract` must be used to mark a `contract` that **does not implement at least one of its functions**
-    - abstract contracts cannot be created with the `new` operator
-    - not possible to generate bytecode for them during compilation
+    - `abstract` contracts cannot be created with the `new` operator
+    - they **do not generate bytecode** at compilation
 - A `library` **must implement *all* of its functions**, not just the internal ones.
-- **Variable declarations in inline assembly may no longer *shadow** any declaration outside the inline assembly block.
+- **Variable declarations in inline assembly may no longer shadow** any declaration outside the inline assembly block.
     - If the name contains a dot, its prefix up the dot may not conflict with any declarations outside the inline assembly block.
 - **State variable shadowing** is now **disallowed**.
-    - a derived contract can only declare a state variable x if there is no visible state variable with the same name in any of its bases.
+    - a derived contract can only declare a state variable `x` if there is no visible state variable `x` in any of its bases.
 
 ### 137. Solidity v0.6.0 Semantic and Syntactic Changes
 
-- Conversions from external `function` types to `address` are now **disallowed**.
-    - Instead, use `<function>.address`
-- The function `push(value)` for dynamic storage arrays does not return the new length anymore
-    - it returns nothing
-- The unnamed function commonly referred to as "fallback function" was split up into
-   - a new fallback function defined using the `fallback()` keyword
-       - called when no other function matches the selector or when `msg.data` is empty and no `receive()` is defined
-       - optionally payable (calls with value revert otherwise)
+- Conversions from `external` function types to `address` are now **disallowed**.
+    - instead, use `<function>.address`
+- The function `push(value)` for dynamic storage arrays **does not return the new length** anymore
+    - it **returns nothing**
+- The unnamed function commonly referred to as "fallback function" was split up into:
+   - a **new `fallback()` function**
+       - called when:
+           - **no function matches the selector**
+           - `msg.data` is **empty**, and **no** `receive()` is defined
+       - optionally `payable`
+           - calls with `msg.value` revert otherwise
        - only need to implement if you are following an upgrade or proxy pattern
-   - a receive ether function using the `receive()` keyword
+   - a **`receive()` ether function**
        - called whenever `calldata` is empty (whether or not ether is received)
-       - implicitly `payable`.
+       - implicitly `payable`
 
 ### 138. Solidity v0.6.0 New Features
 
-- The `try/catch` statement allows you to react on failed external calls.
-- `struct` and `enum` types may be declared at file level
-- Array slices can be used for `calldata` arrays.
-    - For example, `abi.decode(msg.data[4:],(uint, uint))` is a low-level way to decode the function call payload.
-- Natspec supports multiple return parameters in developer
-- Yul and Inline assembly have a new statement called `leave` that exits the current function
-- Conversion from `address` to `address payable` are now possible via `payable(x)` where `x` must be of type `address`.
+- The `try/catch` statement allows you to **react on failed external calls**
+- `struct` and `enum` types may be **declared at file level**
+- Array **slices** can be used for `calldata` arrays.
+    - `abi.decode(msg.data[4:],(uint, uint))` is a low-level way to decode the function call payload
+- **Natspec** supports **multiple return parameters** in developer tag
+- **Yul** has a new statement called `leave` that **exits the current function**
+- **Conversion** from `address` to `address payable` are now possible via `payable(x)`
+    - `x` must be of type `address`.
 
 ## Solidity v0.7.0 Changes
 
 ### 139. Solidity v0.7.0 Breaking Semantic Changes
 
-- **Exponentiation** and **shifts of literals by non-literals** (`1 << x` or `2**x`) will always use either the type `uint256` (for non-negative literals) or `int256` (for negative literals) to perform the operations.
+- **Exponentiation** and **shifts of literals by non-literals** (`1 << x` or `2**x`) will always use either the type:
+   - `uint256` (for non-negative literals)
+   - `int256` (for negative literals)
    - Previously, the operation was performed in the type of the shift amount / the exponent which can be misleading.
 
 ### 140. Solidity v0.7.0 Syntactic Changes
 
-- In external functions and contract creation calls, Ether and gas is now specified using a new syntax: `x.f{gas: 10000, value: 2 ether}(art1, arg2)`.
-    - The old syntax `x.f.gas(10000).value(2 ether)(arg1, arg2)` will throw an `Error`
-- The global variable `now` is deprecated, `block.timestamp` should be used instead.
-    - The single identifier `now` is too generic for a global variable and could give the impression that it changes during the transaction processing, whereas `block.timestamp` correctly reflects the fact that it is just a property of the block
-- NatSpec comments on variables are only allowed for public state variables and not for local or internal variables.
-- The token `gwei` is a keyword now and cannot be used as an identifier.
-- String literals now can only contain printable ASCII characters and this also includes a variety of escape sequences, such as hexadecimal (`\xff`) and unicode escapes (`\u20ac`)
-- Unicode string literals are supported now to accommodate valid UTF-8 sequences. They are identified with the unicode prefix: `unicode"Hello 😃"`
-- State mutability of functions can now be restricted during inheritance.
-    - Functions with default state mutability can be overridden by `pure` and `view` functions,
-    - while `view` functions can be overriden by `pure` functions.
-    - At the same time, public state variables are considered `view` and even `pure` if they are constants.
-- Disallow `.` in user defined function and variables names in inline assembly.
-    - It is still valid if you use solidity in Yul-only mode.
-- Slot and offset of storage pointer variable `x` are accessed via `x.slot` and `x.offset` instead of `x_slot` and `x_offset`
+- **Ether and gas is now specified using a new syntax** in external functions and contract creation calls. The old syntax throw an `Error`:
+    - new syntax: `x.f{gas: 10000, value: 2 ether}(art1, arg2)`.
+    - old syntax `x.f.gas(10000).value(2 ether)(arg1, arg2)`
+- **The global variable `now` is deprecated**:
+    - instead use `block.timestamp`
+    - `now` is too generic for a global variable and could give the impression that it changes during the transaction processing, whereas `block.timestamp` correctly reflects the fact that it is just a **property of the block**
+- **NatSpec comments are only allowed for public state variables**
+    - not for local or internal variables
+- **The token `gwei` is a keyword now**
+    - it cannot be used as an identifier anymore
+- **String literals now can only contain printable ASCII characters and escape sequences**
+    -  hexadecimal escape (`\xff`) and unicode escapes (`\u20ac`)
+- **Unicode string literals support valid UTF-8 sequences**
+    - identify with the `unicode` prefix: `unicode"Hello 😃"`
+- **State mutability of functions can now be restricted during inheritance**
+    - default can be overridden by `pure` and `view` functions
+    - `view` can be overridden by `pure`
+    - public state variables are considered `view` and even `pure` if they are constants.
+- **Disallow `.` in user defined function and variables names in inline assembly**
+    - it is still valid if you use solidity in Yul-only mode.
+- **Slot and offset of storage pointer variable `x` have changed**
+    - access via `x.slot` and `x.offset`
+    - not via `x_slot` and `x_offset`
 
 ### 141. Solidity v0.7.0 Removal of Unused or Unsafe Features
 
@@ -143,7 +157,7 @@ There are distinctions between several types of changes:
 - **Explicit conversions between literals and an integer type `T` are only allowed if the literal lies between `type(T).min` and `type(T).max`**
     - In particular, replace usages of `uint(-1)` with `type(uint).max`.
 - **Explicit conversions between literals and enums are only allowed if the literal can represent a value in the enum**
-- **Explicit conversions between literals and `address` via `address(literal)` have the type `address` instead of `address payable`**
+- **Explicit conversions via `address(literal)` have the type `address` instead of `address payable`**
     -  use `payable(literal)` to convert to `address payable`
 - **Address literals have the type `address` instead of `address payable`**
     - They can be converted to `address payable` by using an explicit conversion
@@ -179,10 +193,10 @@ require( destination != address(0), "Error: this will burn tokens");
 ### 145. Tx origin Check
 
 Ethereum has two types of accounts: Externally Owned Accounts (EOA) and Contract Accounts.
-- Transactions can originate only from EOAs.
-- Messages may originate from either.
+- **Transactions** can originate only from **EOAs**
+- **Messages** may originate from either **EOAs or contracts**
 
-In situations where contracts would like to determine if the `msg.sender` was a contract or not, checking if `msg.sender` is `tx.origin` is an effective check.
+To determine if the `msg.sender` is a contract or not, checking if `msg.sender` is `tx.origin` is an effective check.
 
 ```solidity
 require( msg.sender == tx.origin, "Error: msg from contract account");
@@ -192,4 +206,4 @@ require( msg.sender == tx.origin, "Error: msg from contract account");
 
 Until Solidity `v0.8.0` introduced checked arithmetic by default, arithmetic was unchecked and susceptible to overflows and underflows, leading to critical vulnerabilities.
 
-The recommended best practice for contracts before `v0.8.0` is to use OZ's SafeMath library for arithmetic.
+The recommended best practice for contracts before `v0.8.0` is to use OZ's `SafeMath` library for arithmetic.

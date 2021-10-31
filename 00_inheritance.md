@@ -216,7 +216,7 @@ The `constructor()` functions of all base contracts are called with the followin
 
 ### 112. Name Collision Error
 
-An `Error` is thrown when any of the following pairs in a contract have the same name due to inheritance:
+An `Error` is thrown when any of the following pairs in a contract **have the same name** due to inheritance:
 1. `function` and `modifier`
 2. `function` and `event`
 3. `event` and `modifier`

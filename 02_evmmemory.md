@@ -22,7 +22,7 @@ Solidity reserves **four 32-byte slots** with specific byte ranges (inclusive of
 
 ### 128. Memory Layout & Arrays
 
-**Elements** in `memory` arrays always occupy **multiples of 32 bytes**
+**Elements** in `memory` arrays always **occupy multiples of 32 bytes**
 - also true for `byte[]`
 - not true for `bytes` or `string`
 - multi-dimensional `memory` arrays are **pointers** to underlying `memory` arrays
