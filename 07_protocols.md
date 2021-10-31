@@ -16,11 +16,11 @@ The most widely used WETH contract is WETH9, which holds more than 7 million Eth
 
 Uniswap is an automated liquidity protocol powered by a constant product formula and implemented in a system of non-upgradable smart contracts on the Ethereum blockchain.
 
-The Automated Market Making (AMM) algorithm used by Uniswap is `x * y = k`, where `x` and `y` represent a token pair that allows one token to be exchaned for the other as long as the "constant product" formula is preserved, i.e. trades must not change the product `k` of a pair's reserve balances (x and y)
+The Automated Market Making (AMM) algorithm used by Uniswap is `x * y = k`, where `x` and `y` represent a token pair that allows one token to be exchanged for the other as long as the "constant product" formula is preserved, i.e. trades must not change the product `k` of a pair's reserve balances (x and y)
 
 Core concepts:
-1. **Pools**: Each Uniswap liquidity pool is a trading venue for a pair of `ERC20` tokens.
-    - when a pool contract is created, its balances of each token are 0
+1. **Pools**: Each Uniswap liquidity pool is a trading venue for a **pair** of `ERC20` tokens.
+    - when a pool contract is created, its balances of each token are `0`
     - in order for the pool to begin facilitating trades, someone must seed it with an initial deposit of each token
     - the first liquidity provider sets the initial price of the pool and are incentivized to deposit equal value of both tokens into the pool
     - whenever liquidity is deposited into a pool, unique tokens known as liquidity tokens are minted and sent to the provider's address. These tokens represent a given liquidity provider's contribution to a pool
@@ -35,12 +35,14 @@ Core concepts:
 
 ### 200. Uniswap V3
 
-1. **Concentrated Liquidity**: giving individual LPs granular control over what price ranges their capital is allocated to. Individual positions are aggregated together into a single pool, forming one combined curve for users to trade against.
+1. **Concentrated Liquidity**: giving individual LPs granular control over what price ranges their capital is allocated to.
+    - Individual positions are aggregated together into a single pool, forming one combined curve for users to trade against.
 2. **Multiple Fee Tiers**: allowing LPs to be appropriately compensated for taking on varying degrees of risk
-3. V3 oracles are capable of providing time-weighted average prices (TWAPs) on demand for any period within the last ~9 days. This removes the need to integrators to checkpoint historical values.
+3. **V3 oracles**: provide time-weighted average prices (TWAPs) on demand for any period within the last ~9 days
+    - this removes the need to integrators to checkpoint historical values.
 
 ### 201. Chainlink Oracles & Price Feeds
 
 Chainlink price feeds provide aggregated data (via its `AggregatorV3Interface` contract interface) from various high quality data providers, fed on-chain by decentralized oracles on the Chainlink Network.
 
-TO get price data into smart contract for an asset that isn't covered by an existing price feed, such as the price of a particular stock, one can customize Chainlink oracles to call any external API.
+To get price data into smart contract for an asset that isn't covered by an existing price feed, such as the price of a particular stock, one can customize Chainlink oracles to call any external API.
